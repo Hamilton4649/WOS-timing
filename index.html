@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ホワサバ 集結開始時間計算</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    input[type=number] { width: 60px; }
+    button { margin-top: 10px; padding: 6px 12px; }
+    @media (max-width: 600px) {
+  table, thead, tbody, th, td, tr {
+    display: block;
+    width: 100%;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tr {
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: #f9f9f9;
+  }
+
+  td {
+    text-align: left;
+    padding: 6px;
+    border: none;
+    position: relative;
+  }
+
+  td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  input[type=number], input[type=text] {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+  </style>
+</head>
+<body>
+  <h2>ホワイトアウトサバイバル - 集結開始時間計算</h2>
+
+  <table id="playersTable">
+    <thead>
+      <tr>
+        <th>プレイヤー名</th>
+        <th>行軍分</th>
+        <th>行軍秒</th>
+        <th>集結開始時間（秒）</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="playersBody">
+      <tr>
+        <td data-label="プレイヤー名"><input type="text" value="プレイヤー1" class="name" /></td>
+        <td data-label="行軍分"><input type="number" min="0" value="0" class="min" /></td>
+        <td data-label="行軍秒"><input type="number" min="0" max="59" value="10" class="sec" /></td>
+        <td data-label="集結開始時間（秒）" class="result">-</td>
+        <td data-label="操作"><button onclick="removeRow(this)">削除</button></td>
+      </tr>
+      <tr>
+        <td data-label="プレイヤー名"><input type="text" value="プレイヤー2" class="name" /></td>
+        <td data-label="行軍分"><input type="number" min="0" value="0" class="min" /></td>
+        <td data-label="行軍秒"><input type="number" min="0" max="59" value="20" class="sec" /></td>
+        <td data-label="集結開始時間（秒）"class="result">-</td>
+        <td data-label="操作"><button onclick="removeRow(this)">削除</button></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <button onclick="addPlayer()">プレイヤー追加</button>
+  <button onclick="calculate()">計算する</button>
+
+  <script>
+    // プレイヤー行追加
+    function addPlayer() {
+      const tbody = document.getElementById("playersBody");
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td data-label="プレイヤー名"><input type="text" value="新しいプレイヤー" class="name" /></td>
+        <td data-label="行軍分"><input type="number" min="0" value="0" class="min" /></td>
+        <td data-label="行軍秒"><input type="number" min="0" max="59" value="0" class="sec" /></td>
+        <td data-label="集結開始時間（秒）" class="result">-</td>
+        <td data-label="操作"><button onclick="removeRow(this)">削除</button></td>
+      `;
+      tbody.appendChild(row);
+    }
+
+    // 行削除
+    function removeRow(button) {
+      const tr = button.closest("tr");
+      tr.remove();
+    }
+
+    // 計算処理
+    function calculate() {
+      const rows = document.querySelectorAll("#playersBody tr");
+      if (rows.length === 0) {
+        alert("プレイヤーを1人以上追加してください。");
+        return;
+      }
+
+      const times = [];
+
+      // x_iを秒数で取得
+      for (const row of rows) {
+        const min = parseInt(row.querySelector(".min").value) || 0;
+        const sec = parseInt(row.querySelector(".sec").value) || 0;
+        if (sec < 0 || sec > 59) {
+          alert("秒は0から59の範囲で入力してください。");
+          return;
+        }
+        times.push(min * 60 + sec);
+      }
+
+      // 平均x_ave
+      const x_ave = times.reduce((a, b) => a + b, 0) / times.length;
+      const x_a = Math.floor(x_ave);
+
+      // y_i = x_a - x_i
+      const y_i = times.map(t => x_a - t);
+
+      // y_a = |最小値|
+      const minVal = Math.min(...y_i);
+      const y_a = Math.abs(minVal);
+
+      // z_i = y_a + y_i
+      const z_i = y_i.map(val => y_a + val);
+
+      // 結果を表示
+      rows.forEach((row, i) => {
+        row.querySelector(".result").textContent = `${z_i[i]} 秒`;
+      });
+    }
+  </script>
+  <button onclick="calculate()">計算する</button>
+
+<!-- ここに使い方説明を追加 -->
+<div id="usage" style="margin-top: 15px; font-size: 14px; color: #333;">
+  <h3>使い方の説明</h3>
+  <ul>
+    <li>プレイヤー名を入力してください。</li>
+    <li>行軍にかかる時間を分と秒で入力してください。</li>
+    <li>「計算する」ボタンを押すと集結開始時間が秒単位で表示されます。ゲーム内時計の秒数に合わせて集結をかけてください。</li>
+    <li>「プレイヤー追加」ボタンで行を追加、「削除」ボタンで行を削除できます。</li>
+  </ul>
+</div>
+
+</body>
+</html>
